@@ -68,9 +68,30 @@ static RemoteControls *remoteControls = nil;
         CIImage *cim = [image CIImage];
         if (cim != nil || cgref != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
+                MPRemoteCommandCenter *rcc = [MPRemoteCommandCenter sharedCommandCenter];
+                    
+                MPSkipIntervalCommand *skipBackwardIntervalCommand = [rcc skipBackwardCommand];
+                [skipBackwardIntervalCommand setEnabled:YES];
+                [skipBackwardIntervalCommand addTarget:self action:@selector(skipBackwardEvent:)];
+                skipBackwardIntervalCommand.preferredIntervals = @[@(15)];
+                
+                MPSkipIntervalCommand *skipForwardIntervalCommand = [rcc skipForwardCommand];
+                skipForwardIntervalCommand.preferredIntervals = @[@(15)];
+                [skipForwardIntervalCommand setEnabled:YES];
+                [skipForwardIntervalCommand addTarget:self action:@selector(skipForwardEvent:)];
+                
+                MPRemoteCommand *pauseCommand = [rcc pauseCommand];
+                [pauseCommand setEnabled:YES];
+                [pauseCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                
+                MPRemoteCommand *playCommand = [rcc playCommand];
+                [playCommand setEnabled:YES];
+                [playCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                
                 if (NSClassFromString(@"MPNowPlayingInfoCenter")) {
                     MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithImage: image];
                     MPNowPlayingInfoCenter *center = [MPNowPlayingInfoCenter defaultCenter];
+                    
                     center.nowPlayingInfo = [NSDictionary dictionaryWithObjectsAndKeys:
                         artist, MPMediaItemPropertyArtist,
                         title, MPMediaItemPropertyTitle,
@@ -83,6 +104,20 @@ static RemoteControls *remoteControls = nil;
             });
         }
     });
+}
+
+-(void)skipBackwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
+{
+    NSLog(@"Skip backward by %f", skipEvent.interval);
+}
+
+-(void)skipForwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
+{
+    NSLog(@"Skip forward by %f", skipEvent.interval);
+}
+
+-(void) playOrPauseEvent: (MPRemoteCommandEvent *) playPauseEvent{
+    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
 }
 
 
