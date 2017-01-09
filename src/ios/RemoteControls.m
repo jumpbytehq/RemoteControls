@@ -23,7 +23,6 @@ static RemoteControls *remoteControls = nil;
 
 - (void)updateMetas:(CDVInvokedUrlCommand*)command
 {
-    callbackCommand = command;
     NSString *artist = [command.arguments objectAtIndex:0];
     NSString *title = [command.arguments objectAtIndex:1];
     NSString *album = [command.arguments objectAtIndex:2];
@@ -119,19 +118,26 @@ static RemoteControls *remoteControls = nil;
 -(void)skipBackwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
 {
     NSLog(@"Skip backward by %f", skipEvent.interval);
-    CDVPluginResult* pluginResult = nil;
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"prevTrack"];
-    [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
+    [self createRemoteEvent: @"prevTrack"];
 }
 
 -(void)skipForwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
 {
     NSLog(@"Skip forward by %f", skipEvent.interval);
-    CDVPluginResult* pluginResult = nil;
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"nextTrack"];
-    [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
+    [self createRemoteEvent: @"nextTrack"];
+}
+
+- (void) createRemoteEvent: (NSString*) subtype{
+    NSDictionary *dict = @{@"subtype": subtype};
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options: 0 error: nil];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSString *jsStatement = [NSString stringWithFormat:@"if(window.remoteControls)remoteControls.receiveRemoteEvent(%@);", jsonString];
+    
+#ifdef __CORDOVA_4_0_0
+    [self.webViewEngine evaluateJavaScript:jsStatement completionHandler:nil];
+#else
+    [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+#endif
 }
 
 -(void) playOrPauseEvent: (MPRemoteCommandEvent *) playPauseEvent{
@@ -146,7 +152,6 @@ static RemoteControls *remoteControls = nil;
     if (receivedEvent.type == UIEventTypeRemoteControl) {
 
         NSString *subtype = @"other";
-        CDVPluginResult* pluginResult = nil;
 
         switch (receivedEvent.subtype) {
 
@@ -169,17 +174,11 @@ static RemoteControls *remoteControls = nil;
                 //[self previousTrack: nil];
                 NSLog(@"prev clicked.");
                 subtype = @"prevTrack";
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"prevTrack"];
-                [pluginResult setKeepCallbackAsBool:true];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
                 break;
 
             case UIEventSubtypeRemoteControlNextTrack:
                 NSLog(@"next clicked.");
                 subtype = @"nextTrack";
-                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"nextTrack"];
-                [pluginResult setKeepCallbackAsBool:true];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
                 //[self nextTrack: nil];
                 break;
 
