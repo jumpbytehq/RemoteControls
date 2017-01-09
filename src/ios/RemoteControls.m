@@ -23,12 +23,17 @@ static RemoteControls *remoteControls = nil;
 
 - (void)updateMetas:(CDVInvokedUrlCommand*)command
 {
+    callbackCommand = command;
     NSString *artist = [command.arguments objectAtIndex:0];
     NSString *title = [command.arguments objectAtIndex:1];
     NSString *album = [command.arguments objectAtIndex:2];
     NSString *cover = [command.arguments objectAtIndex:3];
     NSNumber *duration = [command.arguments objectAtIndex:4];
     NSNumber *elapsed = [command.arguments objectAtIndex:5];
+    bool showNext = [[command.arguments objectAtIndex:6] boolValue];
+    NSNumber *skipTime = [command.arguments objectAtIndex:7];
+    
+    NSLog(@"Update");
 
     // async cover loading
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
@@ -68,25 +73,30 @@ static RemoteControls *remoteControls = nil;
         CIImage *cim = [image CIImage];
         if (cim != nil || cgref != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                MPRemoteCommandCenter *rcc = [MPRemoteCommandCenter sharedCommandCenter];
+                
+                if(!showNext){
+                    MPRemoteCommandCenter *rcc = [MPRemoteCommandCenter sharedCommandCenter];
                     
-                MPSkipIntervalCommand *skipBackwardIntervalCommand = [rcc skipBackwardCommand];
-                [skipBackwardIntervalCommand setEnabled:YES];
-                [skipBackwardIntervalCommand addTarget:self action:@selector(skipBackwardEvent:)];
-                skipBackwardIntervalCommand.preferredIntervals = @[@(15)];
-                
-                MPSkipIntervalCommand *skipForwardIntervalCommand = [rcc skipForwardCommand];
-                skipForwardIntervalCommand.preferredIntervals = @[@(15)];
-                [skipForwardIntervalCommand setEnabled:YES];
-                [skipForwardIntervalCommand addTarget:self action:@selector(skipForwardEvent:)];
-                
-                MPRemoteCommand *pauseCommand = [rcc pauseCommand];
-                [pauseCommand setEnabled:YES];
-                [pauseCommand addTarget:self action:@selector(playOrPauseEvent:)];
-                
-                MPRemoteCommand *playCommand = [rcc playCommand];
-                [playCommand setEnabled:YES];
-                [playCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                    MPSkipIntervalCommand *skipBackwardIntervalCommand = [rcc skipBackwardCommand];
+                    [skipBackwardIntervalCommand setEnabled:YES];
+                    [skipBackwardIntervalCommand removeTarget:self action:@selector(skipBackwardEvent:)];
+                    [skipBackwardIntervalCommand addTarget:self action:@selector(skipBackwardEvent:)];
+                    skipBackwardIntervalCommand.preferredIntervals = @[skipTime];
+                    
+                    MPSkipIntervalCommand *skipForwardIntervalCommand = [rcc skipForwardCommand];
+                    skipForwardIntervalCommand.preferredIntervals = @[skipTime];
+                    [skipForwardIntervalCommand setEnabled:YES];
+                    [skipForwardIntervalCommand removeTarget:self action:@selector(skipForwardEvent:)];
+                    [skipForwardIntervalCommand addTarget:self action:@selector(skipForwardEvent:)];
+                    
+                    MPRemoteCommand *pauseCommand = [rcc pauseCommand];
+                    [pauseCommand setEnabled:YES];
+                    [pauseCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                    
+                    MPRemoteCommand *playCommand = [rcc playCommand];
+                    [playCommand setEnabled:YES];
+                    [playCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                }
                 
                 if (NSClassFromString(@"MPNowPlayingInfoCenter")) {
                     MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithImage: image];
@@ -109,15 +119,23 @@ static RemoteControls *remoteControls = nil;
 -(void)skipBackwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
 {
     NSLog(@"Skip backward by %f", skipEvent.interval);
+    CDVPluginResult* pluginResult = nil;
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"prevTrack"];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
 }
 
 -(void)skipForwardEvent: (MPSkipIntervalCommandEvent *)skipEvent
 {
     NSLog(@"Skip forward by %f", skipEvent.interval);
+    CDVPluginResult* pluginResult = nil;
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"nextTrack"];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
 }
 
 -(void) playOrPauseEvent: (MPRemoteCommandEvent *) playPauseEvent{
-    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
+//    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
 }
 
 
@@ -128,6 +146,7 @@ static RemoteControls *remoteControls = nil;
     if (receivedEvent.type == UIEventTypeRemoteControl) {
 
         NSString *subtype = @"other";
+        CDVPluginResult* pluginResult = nil;
 
         switch (receivedEvent.subtype) {
 
@@ -150,11 +169,17 @@ static RemoteControls *remoteControls = nil;
                 //[self previousTrack: nil];
                 NSLog(@"prev clicked.");
                 subtype = @"prevTrack";
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"prevTrack"];
+                [pluginResult setKeepCallbackAsBool:true];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
                 break;
 
             case UIEventSubtypeRemoteControlNextTrack:
                 NSLog(@"next clicked.");
                 subtype = @"nextTrack";
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"nextTrack"];
+                [pluginResult setKeepCallbackAsBool:true];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackCommand.callbackId];
                 //[self nextTrack: nil];
                 break;
 

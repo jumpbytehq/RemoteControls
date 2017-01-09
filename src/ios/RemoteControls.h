@@ -13,6 +13,7 @@
 #import <MediaPlayer/MPMediaItem.h>
 
 @interface RemoteControls : CDVPlugin {
+	CDVInvokedUrlCommand *callbackCommand;
 }
 
 - (void)updateMetas:(CDVInvokedUrlCommand*)command;
