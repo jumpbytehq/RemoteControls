@@ -31,8 +31,10 @@ function onDeviceReady() {
   image = "path_within_documents_storage OR url_starting_with_http_or_https";
   duration = my_media.getDuration();
   elapsedTime = my_media.getElapsedTime();
+  showNextPrevious = true; //true will show the next and previous buttons, false will show the forward and rewind buttons
+  skipTime = 10; //skip time for forward and rewind buttons
 
-  var params = [artist, title, album, image, duration, elapsedTime];
+  var params = [artist, title, album, image, duration, elapsedTime, showNextPrevious, skipTime];
   window.remoteControls.updateMetas(function(success){
       console.log(success);
   }, function(fail){
