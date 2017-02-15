@@ -142,12 +142,12 @@ static RemoteControls *remoteControls = nil;
 
 -(void) playEvent: (MPRemoteCommandEvent *) evt{
 //    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
-    [self createRemoteEvent: @"play"];
+    //[self createRemoteEvent: @"play"];
 }
 
 -(void) pauseEvent: (MPRemoteCommandEvent *) evt{
 //    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
-    [self createRemoteEvent: @"pause"];
+    //[self createRemoteEvent: @"pause"];
 }
 
 
