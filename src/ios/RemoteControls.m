@@ -90,11 +90,11 @@ static RemoteControls *remoteControls = nil;
                     
                     MPRemoteCommand *pauseCommand = [rcc pauseCommand];
                     [pauseCommand setEnabled:YES];
-                    [pauseCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                    [pauseCommand addTarget:self action:@selector(pauseEvent:)];
                     
                     MPRemoteCommand *playCommand = [rcc playCommand];
                     [playCommand setEnabled:YES];
-                    [playCommand addTarget:self action:@selector(playOrPauseEvent:)];
+                    [playCommand addTarget:self action:@selector(playEvent:)];
                 }
                 
                 if (NSClassFromString(@"MPNowPlayingInfoCenter")) {
@@ -140,8 +140,14 @@ static RemoteControls *remoteControls = nil;
 #endif
 }
 
--(void) playOrPauseEvent: (MPRemoteCommandEvent *) playPauseEvent{
+-(void) playEvent: (MPRemoteCommandEvent *) evt{
 //    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
+    [self createRemoteEvent: @"play"];
+}
+
+-(void) pauseEvent: (MPRemoteCommandEvent *) evt{
+//    NSLog(@"Play or pause: %f", playPauseEvent.timestamp);
+    [self createRemoteEvent: @"pause"];
 }
 
 
